@@ -20,6 +20,6 @@ public class EyeOfDreamsModelGenerator extends FabricModelProvider {
 
     @Override
     public void generateItemModels(ItemModelGenerator itemModelGenerator) {
-        itemModelGenerator.register(EyeOfDreams.EYE, Models.GENERATED);
+        itemModelGenerator.register(EyeOfDreams.EYE);
     }
 }

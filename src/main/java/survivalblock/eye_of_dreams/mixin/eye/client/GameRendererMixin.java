@@ -1,4 +1,4 @@
-package survivalblock.eye_of_dreams.mixin.client;
+package survivalblock.eye_of_dreams.mixin.eye.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
@@ -7,6 +7,7 @@ import net.minecraft.client.render.DefaultFramebufferSet;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.util.Pool;
+import net.minecraft.entity.Entity;
 import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,7 +19,6 @@ import survivalblock.eye_of_dreams.client.EyeOfDreamsClient;
 
 import static survivalblock.eye_of_dreams.common.EyeOfDreams.SLUMBERING;
 
-@Debug(export = true)
 @Mixin(value = GameRenderer.class, priority = 5000)
 public abstract class GameRendererMixin {
 
@@ -29,8 +29,15 @@ public abstract class GameRendererMixin {
     @SuppressWarnings({"deprecation", "resource"})
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/WorldRenderer;drawEntityOutlinesFramebuffer()V", shift = At.Shift.AFTER))
     private void applySlumberShader(RenderTickCounter tickCounter, boolean tick, CallbackInfo ci) {
-        if (!this.client.player.getAttachedOrCreate(SLUMBERING)) {
-            return;
+        Entity focused = this.client.getCameraEntity();
+        if (focused == null) {
+            if (!this.client.player.getAttachedOrCreate(SLUMBERING)) {
+                return;
+            }
+        } else {
+            if (!focused.getAttachedOrElse(SLUMBERING, false)) {
+                return;
+            }
         }
         RenderSystem.resetTextureMatrix();
         PostEffectProcessor postEffectProcessor = this.client.getShaderLoader().loadPostEffect(EyeOfDreamsClient.DREAMING_SHADER, DefaultFramebufferSet.MAIN_ONLY);

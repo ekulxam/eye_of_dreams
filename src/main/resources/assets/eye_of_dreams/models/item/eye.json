@@ -2,5 +2,10 @@
   "parent": "minecraft:item/generated",
   "textures": {
     "layer0": "eye_of_dreams:item/eye"
+  },
+  "display": {
+    "head": {
+      "translation": [0, 0, -6]
+    }
   }
 }

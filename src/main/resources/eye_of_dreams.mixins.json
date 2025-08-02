@@ -1,17 +1,25 @@
 {
-	"required": true,
-	"package": "survivalblock.eye_of_dreams.mixin",
-	"compatibilityLevel": "JAVA_21",
-	"mixins": [
-	],
-	"injectors": {
-		"defaultRequire": 1
-	},
-	"overwrites": {
-		"requireAnnotations": true
-	},
-	"client": [
-		"client.GameRendererMixin",
-		"client.ItemStackMixin"
-	]
+  "required": true,
+  "package": "survivalblock.eye_of_dreams.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "eye.LivingEntityMixin",
+    "eye.PlayerEntityMixin",
+    "phantomchanges.EntityTypeMixin",
+    "phantomchanges.MobEntityMixin",
+    "phantomchanges.PhantomEntityMixin",
+    "phantomchanges.PhantomEntityMixin$PhantomMoveControlMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  },
+  "client": [
+    "eye.client.EntityRenderDispatcherMixin",
+    "eye.client.GameRendererMixin",
+    "eye.client.InGameHudMixin",
+    "eye.client.ItemStackMixin"
+  ]
 }

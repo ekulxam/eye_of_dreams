@@ -12,7 +12,7 @@
 		"sources": "https://github.com/ekulxam/eye_of_dreams"
 	},
 	"license": "MIT-0",
-	"icon": "assets/eye_of_dreams/icon.png",
+	"icon": "assets/eye_of_dreams/textures/item/eye.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [

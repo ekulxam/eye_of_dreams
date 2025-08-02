@@ -7,6 +7,7 @@ import survivalblock.eye_of_dreams.common.EyeOfDreams;
 public class EyeOfDreamsClient implements ClientModInitializer {
 
     public static final Identifier DREAMING_SHADER = EyeOfDreams.id("slumber");
+    public static final Identifier CROSSHAIR = EyeOfDreams.id("hud/crosshair");
 
     @Override
     public void onInitializeClient() {
