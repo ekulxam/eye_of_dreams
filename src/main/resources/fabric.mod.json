@@ -8,8 +8,9 @@
 		"Survivalblock"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/ekulxam/eye_of_dreams"
+		"homepage": "https://modrinth.com/mod/eye_of_dreams",
+		"sources": "https://github.com/ekulxam/eye_of_dreams",
+		"issues": "https://github.com/ekulxam/eye_of_dreams/issues"
 	},
 	"license": "MIT-0",
 	"icon": "assets/eye_of_dreams/textures/item/eye.png",
