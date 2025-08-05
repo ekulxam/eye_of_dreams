@@ -21,19 +21,26 @@ public abstract class GameRendererMixin {
 
     @Shadow @Final private MinecraftClient client;
 
+    private int eod$snoozeProgress = 0;
+    private int eod$MAXIMUM_SNOOZING = 20;
+
     @SuppressWarnings({"UnstableApiUsage", "DataFlowIssue"})
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/WorldRenderer;drawEntityOutlinesFramebuffer()V", shift = At.Shift.AFTER))
     private void applySlumberShader(RenderTickCounter tickCounter, boolean tick, CallbackInfo ci) {
         Entity focused = this.client.getCameraEntity();
         if (focused == null) {
+            eod$snoozeProgress = 0;
             if (!this.client.player.getAttachedOrCreate(SLUMBERING)) {
                 return;
             }
         } else {
+            eod$snoozeProgress = 0;
             if (!focused.getAttachedOrElse(SLUMBERING, false)) {
                 return;
             }
         }
+
+        float progress = Math.min((float)eod$snoozeProgress / eod$MAXIMUM_SNOOZING, 1);
         EyeOfDreamsRenderPipelines.renderSlumber(this.client.getFramebuffer());
     }
 }
