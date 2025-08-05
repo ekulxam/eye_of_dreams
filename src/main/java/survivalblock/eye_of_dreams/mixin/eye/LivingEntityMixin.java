@@ -19,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import survivalblock.eye_of_dreams.common.EyeItem;
 import survivalblock.eye_of_dreams.common.EyeOfDreams;
 
 import static survivalblock.eye_of_dreams.common.EyeOfDreams.SLUMBERING;
@@ -55,7 +56,7 @@ public abstract class LivingEntityMixin extends Entity {
             return;
         }
         boolean slumbering = this.getEquippedStack(EquipmentSlot.HEAD)
-                .isOf(EyeOfDreams.EYE) &&
+                .isOf(EyeOfDreams.EYE_ITEM) &&
                 world.isNight();
         if (this.getAttachedOrCreate(SLUMBERING) != slumbering) {
             this.setAttached(SLUMBERING, slumbering);
@@ -64,7 +65,7 @@ public abstract class LivingEntityMixin extends Entity {
             world.playSound(null, this.getX(), this.getY(), this.getZ(), EyeOfDreams.REVERSE_TOTEM, this.getSoundCategory());
             eye_of_dreams$wasSlumbering = slumbering;
             if (slumbering) {
-                EyeOfDreams.EYE_MODIFIERS_MAP.forEach((attribute, modifier) -> {
+                EyeItem.EYE_MODIFIERS_MAP.forEach((attribute, modifier) -> {
                     EntityAttributeInstance entityAttributeInstance = this.attributes.getCustomInstance(attribute);
                     if (entityAttributeInstance != null) {
                         entityAttributeInstance.removeModifier(modifier.id());
@@ -72,7 +73,7 @@ public abstract class LivingEntityMixin extends Entity {
                     }
                 });
             } else {
-                EyeOfDreams.EYE_MODIFIERS_MAP.forEach((attribute, modifier) -> {
+                EyeItem.EYE_MODIFIERS_MAP.forEach((attribute, modifier) -> {
                     EntityAttributeInstance entityAttributeInstance = this.attributes.getCustomInstance(attribute);
                     if (entityAttributeInstance != null) {
                         entityAttributeInstance.removeModifier(modifier);

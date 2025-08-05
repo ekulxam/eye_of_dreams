@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import survivalblock.eye_of_dreams.client.EyeOfDreamsClient;
 
-import static survivalblock.eye_of_dreams.common.EyeOfDreams.EYE;
+import static survivalblock.eye_of_dreams.common.EyeOfDreams.EYE_ITEM;
 import static survivalblock.eye_of_dreams.common.EyeOfDreams.SLUMBERING;
 
 @Mixin(InGameHud.class)
@@ -49,7 +49,7 @@ public class InGameHudMixin {
         if (stack == null || stack.isEmpty() || this.currentStack == null || this.currentStack.isEmpty()) {
             return original.call(instance, o);
         }
-        if (!stack.isOf(EYE) || !this.currentStack.isOf(EYE)) {
+        if (!stack.isOf(EYE_ITEM) || !this.currentStack.isOf(EYE_ITEM)) {
             return original.call(instance, o);
         }
         return ItemStack.areItemsAndComponentsEqual(stack, this.currentStack);

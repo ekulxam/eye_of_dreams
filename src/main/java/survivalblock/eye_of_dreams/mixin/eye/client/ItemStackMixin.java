@@ -29,7 +29,7 @@ public abstract class ItemStackMixin {
 
     @Inject(method = "appendTooltip", at = @At("HEAD"), cancellable = true)
     private void lore(Item.TooltipContext context, TooltipDisplayComponent displayComponent, @Nullable PlayerEntity player, TooltipType type, Consumer<Text> textConsumer, CallbackInfo ci) {
-        if (!this.isOf(EyeOfDreams.EYE)) {
+        if (!this.isOf(EyeOfDreams.EYE_ITEM)) {
             return;
         }
         if (!Screen.hasShiftDown()) {
@@ -44,7 +44,7 @@ public abstract class ItemStackMixin {
     @SuppressWarnings("DiscouragedShift")
     @Inject(method = "appendTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/tooltip/TooltipType;isAdvanced()Z", shift = At.Shift.BEFORE))
     private void shiftToOpen(Item.TooltipContext context, TooltipDisplayComponent displayComponent, @Nullable PlayerEntity player, TooltipType type, Consumer<Text> textConsumer, CallbackInfo ci) {
-        if (!this.isOf(EyeOfDreams.EYE)) {
+        if (!this.isOf(EyeOfDreams.EYE_ITEM)) {
             return;
         }
         if (Screen.hasShiftDown()) {

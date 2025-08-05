@@ -15,7 +15,7 @@ public class EyeOfDreamsEnUsLangGenerator extends FabricLanguageProvider {
 
     @Override
     public void generateTranslations(RegistryWrapper.WrapperLookup wrapperLookup, TranslationBuilder translationBuilder) {
-        translationBuilder.add(EyeOfDreams.EYE, "Dreamer's Eye");
+        translationBuilder.add(EyeOfDreams.EYE_ITEM, "Dreamer's Eye");
         translationBuilder.add("item.eye_of_dreams.eye.hidden", "[Press shift to see lore]");
         translationBuilder.add("item.eye_of_dreams.eye.0", "Dreamers' blue, dreamers' gold");
         translationBuilder.add("item.eye_of_dreams.eye.1", "Something that cannot be sold");
