@@ -11,5 +11,6 @@ public class EyeOfDreamsDataGenerator implements DataGeneratorEntrypoint {
 		pack.addProvider(EyeOfDreamsEnUsLangGenerator::new);
 		pack.addProvider(EyeOfDreamsModelGenerator::new);
 		pack.addProvider(EyeOfDreamsSoundGenerator::new);
+		pack.addProvider(EyeOfDreamsItemTagGenerator::new);
 	}
 }

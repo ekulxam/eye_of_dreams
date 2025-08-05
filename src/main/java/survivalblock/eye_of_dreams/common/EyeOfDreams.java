@@ -30,6 +30,7 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -77,6 +78,8 @@ public class EyeOfDreams implements ModInitializer {
                 .syncWith(PacketCodecs.BOOLEAN, AttachmentSyncPredicate.all())
 	);
 
+	public static final TagKey<Item> ALLOW_USE_WHILE_SLUMBERING = TagKey.of(RegistryKeys.ITEM, id("allow_use_while_slumbering"));
+
 	public static final Eye EYE = registerItem("eye", Eye::new,
 			new Item.Settings()
 					.rarity(Rarity.EPIC)
@@ -96,7 +99,13 @@ public class EyeOfDreams implements ModInitializer {
 		AttackEntityCallback.EVENT.register(EyeOfDreams::cancelActionIfSlumbering);
 		UseBlockCallback.EVENT.register(EyeOfDreams::cancelActionIfSlumbering);
 		UseEntityCallback.EVENT.register(EyeOfDreams::cancelActionIfSlumbering);
-		UseItemCallback.EVENT.register(EyeOfDreams::cancelActionIfSlumbering);
+		UseItemCallback.EVENT.register((player, world, hand) -> {
+			ItemStack stack = player.getStackInHand(hand);
+			if (stack.isIn(ALLOW_USE_WHILE_SLUMBERING)) {
+				return ActionResult.PASS;
+			}
+			return EyeOfDreams.cancelActionIfSlumbering(player);
+		});
 	}
 
 	public static Identifier id(String path) {

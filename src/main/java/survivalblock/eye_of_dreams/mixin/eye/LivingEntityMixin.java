@@ -7,7 +7,9 @@ import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.AttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,6 +18,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import survivalblock.eye_of_dreams.common.EyeOfDreams;
 
 import static survivalblock.eye_of_dreams.common.EyeOfDreams.SLUMBERING;
@@ -77,5 +80,20 @@ public abstract class LivingEntityMixin extends Entity {
                 });
             }
         }
+    }
+
+    @Inject(method = "damage", at = @At("HEAD"), cancellable = true)
+    private void cancelDamageWhenDreaming(ServerWorld world, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        if (!source.isDirect()) {
+            return;
+        }
+        Entity attacker = source.getAttacker();
+        if (attacker == null) {
+            return;
+        }
+        if (EyeOfDreams.canSee(true, attacker, (LivingEntity) (Object) this)) {
+            return;
+        }
+        cir.setReturnValue(false);
     }
 }
