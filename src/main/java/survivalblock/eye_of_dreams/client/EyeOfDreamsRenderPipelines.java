@@ -31,7 +31,7 @@ public class EyeOfDreamsRenderPipelines {
     public static final RenderPipeline SLUMBER = RenderPipeline.builder(RenderPipelines.POST_EFFECT_PROCESSOR_SNIPPET)
             .withLocation(EyeOfDreams.id("slumber"))
             .withFragmentShader(EyeOfDreams.id("core/slumber"))
-            .withVertexShader(POST_SOBEL)
+            .withVertexShader("core/blit_screen")
             .withSampler("DiffuseSampler")
             .withUniform("ColorChange", UniformType.UNIFORM_BUFFER)
             .withUniform("SamplerInfo", UniformType.UNIFORM_BUFFER)
@@ -137,7 +137,7 @@ public class EyeOfDreamsRenderPipelines {
             pass.setPipeline(SLUMBER);
             RenderSystem.bindDefaultUniforms(pass);
             pass.setUniform("ColorChange", colorChangeUniforms.getBlocking());
-            pass.setUniform("SamplerInfo", samplerInfoUniforms.getBlocking());
+//            pass.setUniform("SamplerInfo", samplerInfoUniforms.getBlocking());
             // might not actually be diffuse but I think theres a way to modify sampler
             // args https://juandiegomontoya.github.io/modern_opengl.html
             pass.bindSampler("DiffuseSampler", framebuffer.getColorAttachmentView());
