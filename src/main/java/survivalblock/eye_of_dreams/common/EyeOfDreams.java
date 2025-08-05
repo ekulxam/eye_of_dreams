@@ -30,6 +30,7 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -84,6 +85,8 @@ public class EyeOfDreams implements ModInitializer {
 					.equippable(EquipmentSlot.HEAD)
 	);
 
+	public static final SoundEvent REVERSE_TOTEM = registerSound("eye_triggers");
+
 	@Override
 	public void onInitialize() {
 		ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(entries -> {
@@ -104,6 +107,11 @@ public class EyeOfDreams implements ModInitializer {
 		Identifier id = id(name);
 		RegistryKey<Item> registryKey = RegistryKey.of(RegistryKeys.ITEM, id);
 		return Registry.register(Registries.ITEM, id, itemFromSettings.apply(settings.registryKey(registryKey)));
+	}
+
+	public static SoundEvent registerSound(String name) {
+		Identifier id = id(name);
+		return Registry.register(Registries.SOUND_EVENT, id, SoundEvent.of(id));
 	}
 
 	public static MutableText scrollingGradient(Text original, int wrap, float reciprocalWrap, int startColor, int endColor, boolean forward) {

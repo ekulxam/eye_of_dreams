@@ -10,5 +10,6 @@ public class EyeOfDreamsDataGenerator implements DataGeneratorEntrypoint {
 		FabricDataGenerator.Pack pack = fabricDataGenerator.createPack();
 		pack.addProvider(EyeOfDreamsEnUsLangGenerator::new);
 		pack.addProvider(EyeOfDreamsModelGenerator::new);
+		pack.addProvider(EyeOfDreamsSoundGenerator::new);
 	}
 }
