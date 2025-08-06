@@ -26,11 +26,12 @@ public class InGameHudMixin {
 
     @Shadow private ItemStack currentStack;
 
+    @SuppressWarnings("UnstableApiUsage")
     @ModifyExpressionValue(method = "renderCrosshair", at = @At(value = "FIELD", target = "Lnet/minecraft/client/gui/hud/InGameHud;CROSSHAIR_TEXTURE:Lnet/minecraft/util/Identifier;"))
     private Identifier useAltCrosshair(Identifier original) {
         Entity focused = this.client.getCameraEntity();
         if (focused == null) {
-            if (!this.client.player.getAttachedOrCreate(SLUMBERING)) {
+            if (this.client.player == null || !this.client.player.getAttachedOrCreate(SLUMBERING)) {
                 return original;
             }
         } else {
