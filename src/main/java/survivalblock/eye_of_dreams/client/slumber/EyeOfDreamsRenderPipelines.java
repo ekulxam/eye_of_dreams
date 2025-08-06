@@ -12,10 +12,10 @@ public class EyeOfDreamsRenderPipelines {
     public static final RenderPipeline SLUMBER = RenderPipeline.builder(RenderPipelines.POST_EFFECT_PROCESSOR_SNIPPET)
             .withLocation(SLUMBER_ID)
             .withFragmentShader(EyeOfDreams.id("core/slumber"))
-            .withVertexShader("core/blit_screen")
+            .withVertexShader("post/sobel")
             .withSampler("DiffuseSampler")
             .withUniform("ColorChange", UniformType.UNIFORM_BUFFER)
-            //.withUniform("SamplerInfo", UniformType.UNIFORM_BUFFER)
+            .withUniform("SamplerInfo", UniformType.UNIFORM_BUFFER)
             .build();
 
     public static void init() {

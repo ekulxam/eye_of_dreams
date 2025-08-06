@@ -14,11 +14,13 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gl.MappableRingBuffer;
 import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.gl.SimpleFramebuffer;
+import survivalblock.eye_of_dreams.common.EyeOfDreams;
 
 import java.util.OptionalInt;
 import java.util.function.Supplier;
 
-@SuppressWarnings({"JavadocReference", "CommentedOutCode"})
+@SuppressWarnings({"JavadocReference"})
 public class EyeOfDreamsShaderRenderer {
 
     // ref https://github.com/neoforged/.github/blob/main/primers/1.21.6/index.md#writing-custom-uniforms
@@ -37,7 +39,6 @@ public class EyeOfDreamsShaderRenderer {
                     .get()
     );
 
-    /*
     private static final MappableRingBuffer SAMPLER_INFO = new MappableRingBuffer(
             () -> "SamplerInfo",
             // Buffer Usage
@@ -51,10 +52,10 @@ public class EyeOfDreamsShaderRenderer {
                     .putVec2()
                     .get()
     );
-     */
 
     private static GpuTexture swap;
     private static GpuTextureView swapView;
+    private static SimpleFramebuffer swapBuffer;
 
     public static void tryResize(Framebuffer framebuffer) {
         if (swap == null ||
@@ -80,6 +81,13 @@ public class EyeOfDreamsShaderRenderer {
         GpuDevice device = RenderSystem.getDevice();
         swap = device.createTexture("eod swap", 10, TextureFormat.RGBA8, width, height, 1, 1);
         swapView = device.createTextureView(swap);
+
+        swapBuffer = new SimpleFramebuffer(
+                EyeOfDreams.id("swap").toString(),
+                width,
+                height,
+                true // not needed in this example
+        );
     }
 
     public static void renderSlumber(Framebuffer framebuffer, double progress) {
@@ -99,7 +107,7 @@ public class EyeOfDreamsShaderRenderer {
         // !!! Set up your uniforms *before* the pass !!!!
         // As we are using a ring buffer, this simply uses the next available buffer in the list
         COLOR_CHANGE.rotate();
-        //samplerInfoUniforms.rotate();
+        SAMPLER_INFO.rotate();
         // Write the data to the buffer
         try (GpuBuffer.MappedView view = commandEncoder.mapBuffer(COLOR_CHANGE.getBlocking(), false, true)) {
             Std140Builder.intoBuffer(view.data())
@@ -107,20 +115,26 @@ public class EyeOfDreamsShaderRenderer {
                     .putVec4(0, 0, 0.2f, 0); // AddColor
         }
 
+        try (GpuBuffer.MappedView view = RenderSystem.getDevice().createCommandEncoder().mapBuffer(SAMPLER_INFO.getBlocking(), false, true)) {
+            Std140Builder.intoBuffer(view.data())
+                    .putVec2(framebuffer.textureWidth, framebuffer.textureHeight)
+                    .putVec2(swapBuffer.textureWidth, swapBuffer.textureHeight);
+        }
+
         // always use try-with-resources to ensure resource is closed at the end, avoid memory leaks
         try(RenderPass pass = commandEncoder.createRenderPass(
                 labelGetter,
                 // drawing into our swap buffer
-                swapView,
+                device.createTextureView(swapBuffer.getColorAttachment()),
                 OptionalInt.empty()
         )) {
             pass.setPipeline(EyeOfDreamsRenderPipelines.SLUMBER);
             RenderSystem.bindDefaultUniforms(pass);
-            //pass.setUniform("SamplerInfo", samplerInfoUniforms.getBlocking());
             // might not actually be diffuse but I think theres a way to modify sampler
             // args https://juandiegomontoya.github.io/modern_opengl.html
             pass.bindSampler("DiffuseSampler", framebuffer.getColorAttachmentView());
             pass.setUniform("ColorChange", COLOR_CHANGE.getBlocking());
+            pass.setUniform("SamplerInfo", SAMPLER_INFO.getBlocking());
 
             // draw the freaking full screen quad
             pass.setVertexBuffer(0, quadBuffer);
@@ -136,7 +150,7 @@ public class EyeOfDreamsShaderRenderer {
         )) {
             // I just use this one to blit since its easy, no uniforms
             pass.setPipeline(RenderPipelines.TRACY_BLIT);
-            pass.bindSampler("InSampler", swapView);
+            pass.bindSampler("InSampler", swapBuffer.getColorAttachmentView());
 
             pass.setVertexBuffer(0, quadBuffer);
             pass.setIndexBuffer(indexBuffer, indices.getIndexType());
