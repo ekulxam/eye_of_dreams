@@ -18,6 +18,15 @@ public class EyeOfDreamsRenderPipelines {
             .withUniform("SamplerInfo", UniformType.UNIFORM_BUFFER)
             .build();
 
+    public static final RenderPipeline BLIT = RenderPipeline.builder(RenderPipelines.POST_EFFECT_PROCESSOR_SNIPPET)
+            .withLocation(EyeOfDreams.id("blit"))
+            .withFragmentShader("post/blit")
+            .withVertexShader("post/blit")
+            .withSampler("InSampler")
+            .withUniform("BlitConfig", UniformType.UNIFORM_BUFFER)
+            .withUniform("SamplerInfo", UniformType.UNIFORM_BUFFER)
+            .build();
+
     public static void init() {
 
     }

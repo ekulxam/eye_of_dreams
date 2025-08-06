@@ -7,6 +7,7 @@ import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.textures.TextureFormat;
@@ -17,6 +18,7 @@ import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gl.SimpleFramebuffer;
 import survivalblock.eye_of_dreams.common.EyeOfDreams;
 
+import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
 
@@ -50,6 +52,14 @@ public class EyeOfDreamsShaderRenderer {
             new Std140SizeCalculator()
                     .putVec2()
                     .putVec2()
+                    .get()
+    );
+
+    private static final MappableRingBuffer BLIT_CONFIG = new MappableRingBuffer(
+            () -> "BlitConfig",
+            GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_MAP_WRITE,
+            new Std140SizeCalculator()
+                    .putVec4()
                     .get()
     );
 
@@ -93,6 +103,8 @@ public class EyeOfDreamsShaderRenderer {
     public static void renderSlumber(Framebuffer framebuffer, double progress) {
         RenderSystem.assertOnRenderThread();
 
+        RenderSystem.backupProjectionMatrix();
+
         tryResize(framebuffer);
 
         Supplier<String> labelGetter = EyeOfDreamsRenderPipelines.SLUMBER_ID::toString;
@@ -115,7 +127,9 @@ public class EyeOfDreamsShaderRenderer {
                     .putVec4(0, 0, 0.2f, 0); // AddColor
         }
 
-        try (GpuBuffer.MappedView view = RenderSystem.getDevice().createCommandEncoder().mapBuffer(SAMPLER_INFO.getBlocking(), false, true)) {
+        swapBuffer.setFilter(FilterMode.LINEAR);
+
+        try (GpuBuffer.MappedView view = commandEncoder.mapBuffer(SAMPLER_INFO.getBlocking(), false, true)) {
             Std140Builder.intoBuffer(view.data())
                     .putVec2(framebuffer.textureWidth, framebuffer.textureHeight)
                     .putVec2(swapBuffer.textureWidth, swapBuffer.textureHeight);
@@ -142,19 +156,41 @@ public class EyeOfDreamsShaderRenderer {
             pass.drawIndexed(0, 0, 6, 1);
         }
 
+        swapBuffer.setFilter(FilterMode.NEAREST);
+
+        SAMPLER_INFO.rotate();
+        BLIT_CONFIG.rotate();
+
+        try (GpuBuffer.MappedView view = commandEncoder.mapBuffer(BLIT_CONFIG.getBlocking(), false, true)) {
+            Std140Builder.intoBuffer(view.data())
+                    .putVec4(1, 1, 1, 1);
+        }
+
+        try (GpuBuffer.MappedView view = commandEncoder.mapBuffer(SAMPLER_INFO.getBlocking(), false, true)) {
+            Std140Builder.intoBuffer(view.data())
+                    .putVec2(framebuffer.textureWidth, framebuffer.textureHeight)
+                    .putVec2(swapBuffer.textureWidth, swapBuffer.textureHeight);
+        }
+
         try(RenderPass pass = commandEncoder.createRenderPass(
                 labelGetter,
                 // drawing back into our main window buffer (or whatever it is you passed in)
                 device.createTextureView(framebuffer.getColorAttachment()),
-                OptionalInt.empty()
+                OptionalInt.empty(),
+                framebuffer.useDepthAttachment ? framebuffer.getDepthAttachmentView() : null,
+                OptionalDouble.empty()
         )) {
             // I just use this one to blit since its easy, no uniforms
-            pass.setPipeline(RenderPipelines.TRACY_BLIT);
+            pass.setPipeline(EyeOfDreamsRenderPipelines.BLIT);
             pass.bindSampler("InSampler", swapBuffer.getColorAttachmentView());
+            pass.setUniform("BlitConfig", BLIT_CONFIG.getBlocking());
+            pass.setUniform("SamplerInfo", SAMPLER_INFO.getBlocking());
 
             pass.setVertexBuffer(0, quadBuffer);
             pass.setIndexBuffer(indexBuffer, indices.getIndexType());
             pass.drawIndexed(0, 0, 6, 1);
         }
+
+        RenderSystem.restoreProjectionMatrix();
     }
 }
