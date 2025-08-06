@@ -6,6 +6,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
+import survivalblock.eye_of_dreams.client.slumber.EyeOfDreamsRenderPipelines;
 import survivalblock.eye_of_dreams.common.EyeOfDreams;
 
 import static survivalblock.eye_of_dreams.common.EyeOfDreams.SLUMBERING;

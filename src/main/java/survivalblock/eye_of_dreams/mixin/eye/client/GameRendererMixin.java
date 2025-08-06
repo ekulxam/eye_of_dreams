@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import survivalblock.eye_of_dreams.client.EyeOfDreamsClient;
-import survivalblock.eye_of_dreams.client.EyeOfDreamsRenderPipelines;
+import survivalblock.eye_of_dreams.client.slumber.EyeOfDreamsShaderRenderer;
 
 @Mixin(value = GameRenderer.class, priority = 5000)
 public abstract class GameRendererMixin {
@@ -21,7 +21,7 @@ public abstract class GameRendererMixin {
     private void applySlumberShader(RenderTickCounter tickCounter, boolean tick, CallbackInfo ci) {
         double progress = (double) EyeOfDreamsClient.shaderProgress / EyeOfDreamsClient.MAX_PROGRESS;
         if (progress >= 0.0001) {
-            EyeOfDreamsRenderPipelines.renderSlumber(this.client.getFramebuffer(), progress);
+            EyeOfDreamsShaderRenderer.renderSlumber(this.client.getFramebuffer(), progress);
         }
     }
 }

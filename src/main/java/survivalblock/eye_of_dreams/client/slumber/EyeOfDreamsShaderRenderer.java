@@ -1,9 +1,9 @@
-package survivalblock.eye_of_dreams.client;
+package survivalblock.eye_of_dreams.client.slumber;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.buffers.Std140SizeCalculator;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -11,25 +11,15 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.textures.TextureFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.gl.*;
-import net.minecraft.util.Identifier;
-import survivalblock.eye_of_dreams.common.EyeOfDreams;
+import net.minecraft.client.gl.Framebuffer;
+import net.minecraft.client.gl.MappableRingBuffer;
+import net.minecraft.client.gl.RenderPipelines;
 
 import java.util.OptionalInt;
+import java.util.function.Supplier;
 
 @SuppressWarnings({"JavadocReference", "CommentedOutCode"})
-public class EyeOfDreamsRenderPipelines {
-
-    public static final Identifier SLUMBER_ID = EyeOfDreams.id("slumber");
-
-    public static final RenderPipeline SLUMBER = RenderPipeline.builder(RenderPipelines.POST_EFFECT_PROCESSOR_SNIPPET)
-            .withLocation(SLUMBER_ID)
-            .withFragmentShader(EyeOfDreams.id("core/slumber"))
-            .withVertexShader("core/blit_screen")
-            .withSampler("DiffuseSampler")
-            .withUniform("ColorChange", UniformType.UNIFORM_BUFFER)
-            //.withUniform("SamplerInfo", UniformType.UNIFORM_BUFFER)
-            .build();
+public class EyeOfDreamsShaderRenderer {
 
     // ref https://github.com/neoforged/.github/blob/main/primers/1.21.6/index.md#writing-custom-uniforms
     // thanks, hama
@@ -66,16 +56,12 @@ public class EyeOfDreamsRenderPipelines {
     private static GpuTexture swap;
     private static GpuTextureView swapView;
 
-    public static void init() {
-
-    }
-
-    public static void initialize(Framebuffer framebuffer) {
+    public static void tryResize(Framebuffer framebuffer) {
         if (swap == null ||
                 swapView == null ||
                 framebuffer.textureWidth != swap.getWidth(1) ||
                 framebuffer.textureHeight != swap.getHeight(1)) {
-            initialize(framebuffer.textureWidth, framebuffer.textureHeight);
+            resize(framebuffer.textureWidth, framebuffer.textureHeight);
         }
     }
 
@@ -84,23 +70,27 @@ public class EyeOfDreamsRenderPipelines {
      * @param width the width of the framebuffer
      * @param height the height of the framebuffer
      */
-    public static void initialize(int width, int height) {
+    public static void resize(int width, int height) {
         if (swap != null) {
             swap.close();
         }
         if (swapView != null) {
             swapView.close();
         }
-        swap = RenderSystem.getDevice().createTexture("eod swap", 10, TextureFormat.RGBA8, width, height, 1, 1);
-        swapView = RenderSystem.getDevice().createTextureView(swap);
+        GpuDevice device = RenderSystem.getDevice();
+        swap = device.createTexture("eod swap", 10, TextureFormat.RGBA8, width, height, 1, 1);
+        swapView = device.createTextureView(swap);
     }
 
     public static void renderSlumber(Framebuffer framebuffer, double progress) {
         RenderSystem.assertOnRenderThread();
 
-        initialize(framebuffer);
+        tryResize(framebuffer);
+
+        Supplier<String> labelGetter = EyeOfDreamsRenderPipelines.SLUMBER_ID::toString;
 
         GpuDevice device = RenderSystem.getDevice();
+        CommandEncoder commandEncoder = device.createCommandEncoder();
 
         GpuBuffer quadBuffer = RenderSystem.getQuadVertexBuffer();
         RenderSystem.ShapeIndexBuffer indices = RenderSystem.getSequentialBuffer(VertexFormat.DrawMode.QUADS);
@@ -111,32 +101,20 @@ public class EyeOfDreamsRenderPipelines {
         COLOR_CHANGE.rotate();
         //samplerInfoUniforms.rotate();
         // Write the data to the buffer
-        try (GpuBuffer.MappedView view = device.createCommandEncoder().mapBuffer(COLOR_CHANGE.getBlocking(), false, true)) {
+        try (GpuBuffer.MappedView view = commandEncoder.mapBuffer(COLOR_CHANGE.getBlocking(), false, true)) {
             Std140Builder.intoBuffer(view.data())
                     .putVec4(0.5F, 1, 1.05F, 1) // MulColor
                     .putVec4(0, 0, 0.2f, 0); // AddColor
         }
 
-        // I think you can replace the sobel vertex shader with a simple passthrough instead
-        /*
-        try (GpuBuffer.MappedView view = RenderSystem.getDevice().createCommandEncoder().mapBuffer(samplerInfoUniforms.getBlocking(), false, true)) {
-            Std140Builder.intoBuffer(view.data())
-                    .putVec2(framebuffer.textureWidth, framebuffer.textureHeight)
-                    .putVec2(swapBuffer.textureWidth, swapBuffer.textureHeight);
-        }
-        */
-
         // always use try-with-resources to ensure resource is closed at the end, avoid memory leaks
-        try(RenderPass pass = device.createCommandEncoder().createRenderPass(
-                SLUMBER_ID::toString,
+        try(RenderPass pass = commandEncoder.createRenderPass(
+                labelGetter,
                 // drawing into our swap buffer
                 swapView,
                 OptionalInt.empty()
-                // we aren't drawing anything new so no need to mess with depth
-                //gpu.createTextureView(framebuffer.getDepthAttachment()),
-                //OptionalDouble.empty()
         )) {
-            pass.setPipeline(SLUMBER);
+            pass.setPipeline(EyeOfDreamsRenderPipelines.SLUMBER);
             RenderSystem.bindDefaultUniforms(pass);
             //pass.setUniform("SamplerInfo", samplerInfoUniforms.getBlocking());
             // might not actually be diffuse but I think theres a way to modify sampler
@@ -150,8 +128,8 @@ public class EyeOfDreamsRenderPipelines {
             pass.drawIndexed(0, 0, 6, 1);
         }
 
-        try(RenderPass pass = device.createCommandEncoder().createRenderPass(
-                SLUMBER_ID::toString,
+        try(RenderPass pass = commandEncoder.createRenderPass(
+                labelGetter,
                 // drawing back into our main window buffer (or whatever it is you passed in)
                 device.createTextureView(framebuffer.getColorAttachment()),
                 OptionalInt.empty()
