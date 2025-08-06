@@ -9,6 +9,7 @@ public class EyeOfDreamsRenderPipelines {
 
     public static final Identifier SLUMBER_ID = EyeOfDreams.id("slumber");
 
+    /*
     public static final RenderPipeline SLUMBER = RenderPipeline.builder(RenderPipelines.POST_EFFECT_PROCESSOR_SNIPPET)
             .withLocation(SLUMBER_ID)
             .withFragmentShader(EyeOfDreams.id("core/slumber"))
@@ -30,4 +31,6 @@ public class EyeOfDreamsRenderPipelines {
     public static void init() {
 
     }
+
+     */
 }

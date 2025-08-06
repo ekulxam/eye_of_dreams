@@ -23,7 +23,7 @@ public class EyeOfDreamsClient implements ClientModInitializer {
     @SuppressWarnings("UnstableApiUsage")
     @Override
     public void onInitializeClient() {
-        EyeOfDreamsRenderPipelines.init();
+        //EyeOfDreamsRenderPipelines.init();
         ClientTickEvents.START_WORLD_TICK.register(clientWorld -> {
             MinecraftClient client = MinecraftClient.getInstance();
             Entity focused = client.getCameraEntity();

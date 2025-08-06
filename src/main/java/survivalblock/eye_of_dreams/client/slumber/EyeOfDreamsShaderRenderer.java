@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 
 @SuppressWarnings({"JavadocReference"})
 public class EyeOfDreamsShaderRenderer {
+    /*
 
     // ref https://github.com/neoforged/.github/blob/main/primers/1.21.6/index.md#writing-custom-uniforms
     // thanks, hama
@@ -80,7 +81,7 @@ public class EyeOfDreamsShaderRenderer {
      * @see net.minecraft.client.util.tracy.TracyFrameCapturer#resize(int, int)
      * @param width the width of the framebuffer
      * @param height the height of the framebuffer
-     */
+     *//*
     public static void resize(int width, int height) {
         if (swap != null) {
             swap.close();
@@ -193,4 +194,5 @@ public class EyeOfDreamsShaderRenderer {
 
         RenderSystem.restoreProjectionMatrix();
     }
+    */
 }
