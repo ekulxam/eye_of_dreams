@@ -5,13 +5,17 @@ import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.buffers.Std140SizeCalculator;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.CommandEncoder;
+import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.blaze3d.textures.TextureFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gl.UniformType;
-import net.minecraft.client.gl.UniformValue;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.*;
+import net.minecraft.client.util.tracy.TracyFrameCapturer;
+import net.minecraft.util.Identifier;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
 import survivalblock.eye_of_dreams.common.EyeOfDreams;
@@ -28,84 +32,140 @@ public class EyeOfDreamsRenderPipelines {
     public static final String POST_BLIT = "post/blit";
 
     public static final RenderPipeline SLUMBER = RenderPipeline.builder(RenderPipelines.POST_EFFECT_PROCESSOR_SNIPPET)
-            .withFragmentShader(POST_SOBEL)
-            .withVertexShader(EyeOfDreams.id("slumber"))
-            .withLocation(EyeOfDreams.id("slumber/0"))
+            .withLocation(EyeOfDreams.id("slumber"))
+            .withFragmentShader(EyeOfDreams.id("core/slumber"))
+            .withVertexShader("core/blit_screen")
             .withSampler("DiffuseSampler")
-            .withUniform("SamplerInfo", UniformType.UNIFORM_BUFFER)
             .withUniform("ColorChange", UniformType.UNIFORM_BUFFER)
+//            .withUniform("SamplerInfo", UniformType.UNIFORM_BUFFER)
             .build();
 
-    public static final RenderPipeline BLIT = RenderPipeline.builder(RenderPipelines.POST_EFFECT_PROCESSOR_SNIPPET)
-            .withFragmentShader(POST_BLIT)
-            .withVertexShader(POST_BLIT)
-            .withLocation(EyeOfDreams.id("slumber/1"))
-            .withSampler("InSampler")
-            .withUniform("SamplerInfo", UniformType.UNIFORM_BUFFER)
-            .withUniform("BlitConfig", UniformType.UNIFORM_BUFFER)
-            .build();
+    // ref https://github.com/neoforged/.github/blob/main/primers/1.21.6/index.md#writing-custom-uniforms
+    private static MappableRingBuffer colorChangeUniforms;
+    private static MappableRingBuffer samplerInfoUniforms;
+
+    private static GpuTexture swap;
+    private static GpuTextureView swapView;
+
+    private static boolean initialized = false;
 
     public static void init() {
 
+    }
+
+    private static void initialize(int width, int height) {
+        // TODO DO NOT FORGET TO RESIZE THIS WHEN THE MAIN WINDOW SIZE CHANGES (mixin trigger ok)
+        // see net.minecraft.client.util.tracy.TracyFrameCapturer.resize
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        swap = RenderSystem.getDevice().createTexture("eod swap", 10, TextureFormat.RGBA8, width, height, 1, 1);
+        swapView = RenderSystem.getDevice().createTextureView(swap);
+
+        colorChangeUniforms = new MappableRingBuffer(
+                () -> "ColorChange",
+                // Buffer Usage
+                // We set 128 as its used for a uniform and 2 since we are writing to it
+                // Other bits can be found as constants in `GpuBuffer`
+                GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_MAP_WRITE,
+                // The size of the buffer
+                // Easiest method is to use Std140SizeCalculator to properly calculate this
+                new Std140SizeCalculator()
+                        .putVec4()
+                        .putVec4()
+                        .get()
+        );
+
+        samplerInfoUniforms = new MappableRingBuffer(
+                () -> "ColorChange",
+                // Buffer Usage
+                // We set 128 as its used for a uniform and 2 since we are writing to it
+                // Other bits can be found as constants in `GpuBuffer`
+                GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_MAP_WRITE,
+                // The size of the buffer
+                // Easiest method is to use Std140SizeCalculator to properly calculate this
+                new Std140SizeCalculator()
+                        .putVec2()
+                        .putVec2()
+                        .get()
+        );
     }
 
     public static void renderSlumber(Framebuffer framebuffer) {
         RenderPipeline pipeline = EyeOfDreamsRenderPipelines.SLUMBER;
         RenderSystem.assertOnRenderThread();
 
-        CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
+        if (!initialized) {
+            initialized = true;
+            initialize(framebuffer.textureWidth, framebuffer.textureHeight);
+        } else if (framebuffer.textureWidth != swap.getWidth(1) || framebuffer.textureHeight != swap.getHeight(1)) {
+            swap.close();
+            swapView.close();
+            swap = RenderSystem.getDevice().createTexture("eod swap", 10, TextureFormat.RGBA8, framebuffer.textureWidth, framebuffer.textureHeight, 1, 1);
+            swapView = RenderSystem.getDevice().createTextureView(swap);
+        }
 
-        String id = pipeline.getLocation().toString();
+        GpuDevice gpu = RenderSystem.getDevice();
 
-        GpuBuffer gpuBuffer = RenderSystem.getQuadVertexBuffer();
-        RenderSystem.ShapeIndexBuffer shapeIndexBuffer = RenderSystem.getSequentialBuffer(VertexFormat.DrawMode.QUADS);
-        GpuBuffer gpuBuffer2 = shapeIndexBuffer.getIndexBuffer(6);
+        GpuBuffer quadBuffer = RenderSystem.getQuadVertexBuffer();
+        RenderSystem.ShapeIndexBuffer indices = RenderSystem.getSequentialBuffer(VertexFormat.DrawMode.QUADS);
+        GpuBuffer indexBuffer = indices.getIndexBuffer(6);
 
-        try (RenderPass renderPass = commandEncoder.createRenderPass(
-                () -> "Slumber help what am I doing",
-                framebuffer.getColorAttachmentView(),
-                OptionalInt.empty(),
-                framebuffer.useDepthAttachment ? framebuffer.getDepthAttachmentView() : null,
-                OptionalDouble.empty()
+        // !!! Set up your uniforms *before* the pass !!!!
+        // As we are using a ring buffer, this simply uses the next available buffer in the list
+        colorChangeUniforms.rotate();
+//        samplerInfoUniforms.rotate();
+        // Write the data to the buffer
+        try (GpuBuffer.MappedView view = RenderSystem.getDevice().createCommandEncoder().mapBuffer(colorChangeUniforms.getBlocking(), false, true)) {
+            Std140Builder.intoBuffer(view.data())
+                    .putVec4(0.5F, 1, 1.05F, 1)
+                    .putVec4(0f, 0f, 0.2f, 0f);
+        }
+
+//        // I think you can replace the sobel vertex shader with a simple passthrough instead
+//        try (GpuBuffer.MappedView view = RenderSystem.getDevice().createCommandEncoder().mapBuffer(samplerInfoUniforms.getBlocking(), false, true)) {
+//            Std140Builder.intoBuffer(view.data())
+//                    .putVec2(framebuffer.textureWidth, framebuffer.textureHeight)
+//                    .putVec2(swapBuffer.textureWidth, swapBuffer.textureHeight);
+//        }
+
+
+        // always use try-with-resources to ensure resource is closed at the end, avoid memory leaks
+        try(RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                () -> EyeOfDreams.id("slumber").toString(),
+                // drawing into our swap buffer
+                swapView,
+                OptionalInt.empty()
+                // we aren't drawing anything new so no need to mess with depth
+//                gpu.createTextureView(framebuffer.getDepthAttachment()),
+//                OptionalDouble.empty()
         )) {
-            renderPass.setPipeline(pipeline);
-            RenderSystem.bindDefaultUniforms(renderPass);
+            pass.setPipeline(SLUMBER);
+            RenderSystem.bindDefaultUniforms(pass);
+//            pass.setUniform("SamplerInfo", samplerInfoUniforms.getBlocking());
+            // might not actually be diffuse but I think theres a way to modify sampler
+            // args https://juandiegomontoya.github.io/modern_opengl.html
+            pass.bindSampler("DiffuseSampler", framebuffer.getColorAttachmentView());
+            pass.setUniform("ColorChange", colorChangeUniforms.getBlocking());
 
-            List<UniformValue> uniforms = List.of(
-                    new UniformValue.Vec4fValue(new Vector4f(0.5F, 1, 1.05F, 1)),
-                    new UniformValue.Vec4fValue(new Vector4f(0, 0, 0.2F, 0)));
+            // draw the freaking full screen quad
+            pass.setVertexBuffer(0, quadBuffer);
+            pass.setIndexBuffer(indexBuffer, indices.getIndexType());
+            pass.drawIndexed(0, 0, 6, 1);
+        }
 
-            Map<String, GpuBuffer> uniformBuffers = new HashMap<>();
+        try(RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                () -> EyeOfDreams.id("slumber").toString(),
+                // drawing back into our main window buffer (or whatever it is you passed in)
+                gpu.createTextureView(framebuffer.getColorAttachment()),
+                OptionalInt.empty()
+        )) {
+            // I just use this one to blit since its easy, no uniforms
+            pass.setPipeline(RenderPipelines.TRACY_BLIT);
+            pass.bindSampler("InSampler", swapView);
 
-            Std140SizeCalculator std140SizeCalculator = new Std140SizeCalculator();
-
-            for (UniformValue uniformValue : uniforms) {
-                uniformValue.addSize(std140SizeCalculator);
-            }
-
-            int i = std140SizeCalculator.get();
-
-            try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-                Std140Builder std140Builder = Std140Builder.onStack(memoryStack, i);
-
-                for (UniformValue uniformValue2 : uniforms) {
-                    uniformValue2.write(std140Builder);
-                }
-
-                uniformBuffers
-                        .put("ColorChange", RenderSystem.getDevice().createBuffer(() -> id + " / " + "ColorChange", 128, std140Builder.get()));
-            }
-
-            // set ColorChange uniform
-            uniformBuffers.forEach(renderPass::setUniform);
-
-            renderPass.setVertexBuffer(0, gpuBuffer);
-            renderPass.setIndexBuffer(gpuBuffer2, shapeIndexBuffer.getIndexType());
-
-            // set DiffuseSampler
-            renderPass.bindSampler("DiffuseSampler", framebuffer.getColorAttachmentView());
-
-            renderPass.drawIndexed(0, 0, 6, 1);
+            pass.setVertexBuffer(0, quadBuffer);
+            pass.setIndexBuffer(indexBuffer, indices.getIndexType());
+            pass.drawIndexed(0, 0, 6, 1);
         }
     }
 }
