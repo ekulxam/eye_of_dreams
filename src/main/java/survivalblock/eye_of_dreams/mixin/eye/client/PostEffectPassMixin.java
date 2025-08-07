@@ -78,7 +78,7 @@ public class PostEffectPassMixin {
 
                     for (UniformValue uniformValue2 : list) {
                         if (uniformValue2 instanceof UniformValue.FloatValue) {
-                            uniformValue2 = new UniformValue.FloatValue(EyeOfDreamsClient.getRealProgress());
+                            uniformValue2 = new UniformValue.FloatValue(EyeOfDreamsClient.getRealShaderProgress());
                         }
                         uniformValue2.write(std140Builder);
                     }

@@ -6,7 +6,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
-import survivalblock.eye_of_dreams.client.slumber.EyeOfDreamsRenderPipelines;
 import survivalblock.eye_of_dreams.common.EyeOfDreams;
 
 import static survivalblock.eye_of_dreams.common.EyeOfDreams.SLUMBERING;
@@ -49,9 +48,23 @@ public class EyeOfDreamsClient implements ClientModInitializer {
         });
     }
 
-    public static float getRealProgress() {
-        float zeroToOne = MathHelper.clamp((float) shaderProgress / MAX_PROGRESS, 0, 1);
-        return MathHelper.lerp(zeroToOne, 0, HALF_OF_SQRT_2 + 0.001F);
+    public static float getProgress() {
+        float progress;
+        if (shaderProgress == targetProgress) {
+            progress = shaderProgress;
+        } else {
+            float tickProgress = MinecraftClient.getInstance().getRenderTickCounter().getTickProgress(true);
+            if (shaderProgress < targetProgress) {
+                progress = shaderProgress + tickProgress;
+            } else {
+                progress = shaderProgress - tickProgress;
+            }
+        }
+        return MathHelper.clamp(progress / MAX_PROGRESS, 0, 1);
+    }
+
+    public static float getRealShaderProgress() {
+        return MathHelper.lerp(getProgress(), 0, HALF_OF_SQRT_2 + 0.001F);
     }
 
     // step should always be positive
