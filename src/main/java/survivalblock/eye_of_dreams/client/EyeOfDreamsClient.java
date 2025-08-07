@@ -14,8 +14,9 @@ import static survivalblock.eye_of_dreams.common.EyeOfDreams.SLUMBERING;
 public class EyeOfDreamsClient implements ClientModInitializer {
 
     public static final Identifier CROSSHAIR = EyeOfDreams.id("hud/crosshair");
+    public static final float HALF_OF_SQRT_2 = 0.7071067811865475244F;
 
-    public static final int MAX_PROGRESS = 20;
+    public static final int MAX_PROGRESS = 40;
 
     public static int shaderProgress = 0;
     public static int targetProgress = 0;
@@ -46,6 +47,11 @@ public class EyeOfDreamsClient implements ClientModInitializer {
             }
             shaderProgress = stepTowards(shaderProgress, targetProgress, 1);
         });
+    }
+
+    public static float getRealProgress() {
+        float zeroToOne = MathHelper.clamp((float) shaderProgress / MAX_PROGRESS, 0, 1);
+        return MathHelper.lerp(zeroToOne, 0, HALF_OF_SQRT_2 + 0.001F);
     }
 
     // step should always be positive

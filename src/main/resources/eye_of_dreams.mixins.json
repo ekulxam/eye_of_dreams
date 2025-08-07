@@ -20,6 +20,7 @@
     "eye.client.EntityRenderDispatcherMixin",
     "eye.client.GameRendererMixin",
     "eye.client.InGameHudMixin",
-    "eye.client.ItemStackMixin"
+    "eye.client.ItemStackMixin",
+    "eye.client.PostEffectPassMixin"
   ]
 }

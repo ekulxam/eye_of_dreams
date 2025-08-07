@@ -5,6 +5,8 @@ uniform sampler2D DiffuseSampler;
 layout(std140) uniform ColorChange {
     vec4 MulColor;
     vec4 AddColor;
+    vec2 Center;
+    float Progress;
 };
 
 in vec2 texCoord;
@@ -15,7 +17,12 @@ out vec4 fragColor;
 void main(){
     // modified from sobel.fsh from the original super secret settings
     vec4 center = texture(DiffuseSampler, texCoord);
-    if (center.r <= 0.28 && center.g >= 0.65 && center.b >= 0.65) {
+    if (length(texCoord - Center) > Progress) {
+        fragColor = center;
+        return;
+    }
+
+    if (center.r < 0.25 && center.g > 0.75 && center.b > 0.75) {
         fragColor = vec4(center.rgb, 1.0);
         return;
     }

@@ -25,7 +25,7 @@ public abstract class GameRendererMixin {
     @SuppressWarnings("deprecation")
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/WorldRenderer;drawEntityOutlinesFramebuffer()V", shift = At.Shift.AFTER))
     private void applySlumberShader(RenderTickCounter tickCounter, boolean tick, CallbackInfo ci) {
-        double progress = (double) EyeOfDreamsClient.shaderProgress / EyeOfDreamsClient.MAX_PROGRESS;
+        double progress = EyeOfDreamsClient.getRealProgress();
         if (progress >= 0.0001) {
             PostEffectProcessor pep = this.client.getShaderLoader().loadPostEffect(EyeOfDreamsRenderPipelines.SLUMBER_ID, DefaultFramebufferSet.MAIN_ONLY);
             if (pep != null) {
