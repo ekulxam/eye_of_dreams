@@ -24,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import survivalblock.eye_of_dreams.client.EyeOfDreamsClient;
+import survivalblock.eye_of_dreams.client.slumber.ShaderProgressFloatProvider;
 import survivalblock.eye_of_dreams.common.EyeOfDreams;
 
 import java.util.List;
@@ -48,7 +49,32 @@ public class PostEffectPassMixin {
         if (!this.id.equals(EyeOfDreams.id("slumber/0").toString())) {
             return;
         }
-        this.eye_of_dreams$originalUniforms = ImmutableMap.copyOf(uniforms);
+        ImmutableMap.Builder<String, List<UniformValue>> mapBuilder = ImmutableMap.builderWithExpectedSize(uniforms.size());
+        uniforms.forEach((string, list) -> {
+            int progIndex = -1;
+            int size = list.size();
+            for (int i = 0; i < size; i++) {
+                UniformValue uniformValue = list.get(i);
+                if (uniformValue instanceof UniformValue.FloatValue(float value) && value == 1) {
+                    progIndex = i;
+                    break;
+                }
+            }
+            if (progIndex == -1) {
+                mapBuilder.put(string, list);
+                return;
+            }
+            ImmutableList.Builder<UniformValue> listBuilder = ImmutableList.builderWithExpectedSize(size);
+            for (int i = 0; i < size; i++) {
+                if (progIndex != i) {
+                    listBuilder.add(list.get(i));
+                    continue;
+                }
+                listBuilder.add(ShaderProgressFloatProvider.INSTANCE);
+            }
+            mapBuilder.put(string, listBuilder.build());
+        });
+        this.eye_of_dreams$originalUniforms = mapBuilder.build();
     }
 
     @Inject(method = "render", at = @At("HEAD"))
@@ -77,9 +103,6 @@ public class PostEffectPassMixin {
                     Std140Builder std140Builder = Std140Builder.onStack(memoryStack, i);
 
                     for (UniformValue uniformValue2 : list) {
-                        if (uniformValue2 instanceof UniformValue.FloatValue) {
-                            uniformValue2 = new UniformValue.FloatValue(EyeOfDreamsClient.getRealShaderProgress());
-                        }
                         uniformValue2.write(std140Builder);
                     }
 

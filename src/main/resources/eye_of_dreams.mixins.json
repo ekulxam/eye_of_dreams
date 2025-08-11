@@ -21,6 +21,8 @@
     "eye.client.GameRendererMixin",
     "eye.client.InGameHudMixin",
     "eye.client.ItemStackMixin",
-    "eye.client.PostEffectPassMixin"
+    "eye.client.PostEffectPassMixin",
+    "eye.client.UniformValueMixin",
+    "eye.client.UniformValueMixin$TypeMixin"
   ]
 }
