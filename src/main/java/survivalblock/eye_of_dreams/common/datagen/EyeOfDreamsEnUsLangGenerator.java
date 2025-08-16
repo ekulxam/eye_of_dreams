@@ -26,6 +26,6 @@ public class EyeOfDreamsEnUsLangGenerator extends FabricLanguageProvider {
         translationBuilder.add("item.eye_of_dreams.eye.6", "Dreamers' blue, dreamers' gold");
         translationBuilder.add("item.eye_of_dreams.eye.7", "Countless tales are left untold");
 
-        translationBuilder.add(EyeOfDreams.REVERSE_TOTEM, "Eye Triggers");
+        translationBuilder.add(EyeOfDreams.REALM, "Eye Inverses");
     }
 }

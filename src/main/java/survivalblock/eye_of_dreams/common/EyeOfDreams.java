@@ -59,7 +59,7 @@ public class EyeOfDreams implements ModInitializer {
 					.equippable(EquipmentSlot.HEAD)
 	);
 
-	public static final SoundEvent REVERSE_TOTEM = registerSound("eye_triggers");
+	public static final SoundEvent REALM = registerSound("realm");
 
 	@Override
 	public void onInitialize() {

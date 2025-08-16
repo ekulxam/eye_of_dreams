@@ -62,7 +62,7 @@ public abstract class LivingEntityMixin extends Entity {
             this.setAttached(SLUMBERING, slumbering);
         }
         if (slumbering != eye_of_dreams$wasSlumbering) {
-            world.playSound(null, this.getX(), this.getY(), this.getZ(), EyeOfDreams.REVERSE_TOTEM, this.getSoundCategory());
+            world.playSound(null, this.getX(), this.getY(), this.getZ(), EyeOfDreams.REALM, this.getSoundCategory());
             eye_of_dreams$wasSlumbering = slumbering;
             if (slumbering) {
                 EyeItem.EYE_MODIFIERS_MAP.forEach((attribute, modifier) -> {

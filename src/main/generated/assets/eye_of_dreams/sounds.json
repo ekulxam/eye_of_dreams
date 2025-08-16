@@ -1,9 +1,9 @@
 {
-  "eye_triggers": {
+  "realm": {
     "category": "neutral",
     "sounds": [
-      "eye_of_dreams:eye_triggers"
+      "eye_of_dreams:realm"
     ],
-    "subtitle": "subtitles.eye_of_dreams.eye_triggers"
+    "subtitle": "subtitles.eye_of_dreams.realm"
   }
 }
