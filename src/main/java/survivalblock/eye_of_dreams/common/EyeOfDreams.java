@@ -30,6 +30,8 @@ import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Rarity;
+import net.minecraft.world.waypoint.WaypointStyle;
+import net.minecraft.world.waypoint.WaypointStyles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +62,8 @@ public class EyeOfDreams implements ModInitializer {
 	);
 
 	public static final SoundEvent REALM = registerSound("realm");
+
+	public static final RegistryKey<WaypointStyle> STAR = RegistryKey.of(WaypointStyles.REGISTRY, id("star"));
 
 	@Override
 	public void onInitialize() {

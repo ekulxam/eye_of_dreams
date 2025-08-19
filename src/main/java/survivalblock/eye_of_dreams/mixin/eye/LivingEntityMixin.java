@@ -1,6 +1,8 @@
 package survivalblock.eye_of_dreams.mixin.eye;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import com.mojang.serialization.DataResult;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
@@ -9,8 +11,12 @@ import net.minecraft.entity.attribute.AttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
+import net.minecraft.world.waypoint.ServerWaypoint;
+import net.minecraft.world.waypoint.Waypoint;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -25,7 +31,7 @@ import survivalblock.eye_of_dreams.common.EyeOfDreams;
 import static survivalblock.eye_of_dreams.common.EyeOfDreams.SLUMBERING;
 
 @SuppressWarnings("UnstableApiUsage")
-@Mixin(LivingEntity.class)
+@Mixin(value = LivingEntity.class, priority = 5000)
 public abstract class LivingEntityMixin extends Entity {
 
     @Unique
@@ -80,14 +86,14 @@ public abstract class LivingEntityMixin extends Entity {
                     }
                 });
             }
+            if (this instanceof ServerWaypoint serverWaypoint && serverWaypoint.hasWaypoint()) {
+                ((ServerWorld) world).getWaypointHandler().onTrack(serverWaypoint); // should be a safe cast
+            }
         }
     }
 
     @Inject(method = "damage", at = @At("HEAD"), cancellable = true)
     private void cancelDamageWhenDreaming(ServerWorld world, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-        if (!source.isDirect()) {
-            return;
-        }
         Entity attacker = source.getAttacker();
         if (attacker == null) {
             return;
@@ -96,5 +102,24 @@ public abstract class LivingEntityMixin extends Entity {
             return;
         }
         cir.setReturnValue(false);
+    }
+
+    @ModifyExpressionValue(method = "createTracker", at = @At(value = "FIELD", target = "Lnet/minecraft/entity/LivingEntity;waypointConfig:Lnet/minecraft/world/waypoint/Waypoint$Config;"))
+    private Waypoint.Config slumberingWaypointMixinHack(Waypoint.Config original) {
+        if (!this.getAttachedOrCreate(SLUMBERING)) {
+            return original;
+        }
+        DataResult<NbtElement> encode = Waypoint.Config.CODEC.encodeStart(NbtOps.INSTANCE, original);
+        if (encode.isError()) {
+            return original;
+        }
+        NbtElement nbtElement = encode.getOrThrow();
+        DataResult<Waypoint.Config> decode = Waypoint.Config.CODEC.parse(NbtOps.INSTANCE, nbtElement);
+        if (decode.isError()) {
+            return original;
+        }
+        Waypoint.Config copy = decode.getOrThrow();
+        copy.style = EyeOfDreams.STAR;
+        return copy;
     }
 }

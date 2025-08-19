@@ -7,4 +7,4 @@ To keep Dreamers in check, phantoms have undergone significant changes in this m
 This mod was made for Modfest: Toybox.</br>![Modfest: Toybox badge](https://raw.githubusercontent.com/ModFest/art/v2/badge/svg/toybox/cozy.svg)
 
 `realm.ogg` was provided by WorldWidePixel. Everyone say "Thank you, Pixel!"</br>
-`realm.ogg' is not licensed under MIT and remains unlicensed (not the Unlicense!) while I find a suitable license.
+`realm.ogg` is not licensed under MIT and remains unlicensed (not the Unlicense!) while I find a suitable license.
