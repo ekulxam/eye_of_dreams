@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "glowcase:item_provider_block",
+      "required": false
+    },
+    {
+      "id": "glowcase:popup_block",
+      "required": false
+    }
+  ]
+}

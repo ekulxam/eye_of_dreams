@@ -16,7 +16,7 @@ public class EyeOfDreamsItemTagGenerator extends FabricTagProvider.ItemTagProvid
 
     @Override
     protected void configure(RegistryWrapper.WrapperLookup wrapperLookup) {
-        this.valueLookupBuilder(EyeOfDreams.ALLOW_USE_WHILE_SLUMBERING)
+        this.valueLookupBuilder(EyeOfDreams.ALLOW_USE_WHILE_SLUMBERING_ITEM)
                 .add(Items.SPYGLASS);
     }
 }

@@ -12,7 +12,10 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.mob.PhantomEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -51,7 +54,9 @@ public class EyeOfDreams implements ModInitializer {
                 .syncWith(PacketCodecs.BOOLEAN, AttachmentSyncPredicate.all())
 	);
 
-	public static final TagKey<Item> ALLOW_USE_WHILE_SLUMBERING = TagKey.of(RegistryKeys.ITEM, id("allow_use_while_slumbering"));
+	public static final TagKey<Item> ALLOW_USE_WHILE_SLUMBERING_ITEM = TagKey.of(RegistryKeys.ITEM, id("allow_use_while_slumbering"));
+	public static final TagKey<EntityType<?>> ALWAYS_VISIBLE = TagKey.of(RegistryKeys.ENTITY_TYPE, id("always_visible"));
+	public static final TagKey<Block> ALLOW_USE_WHILE_SLUMBERING_BLOCK = TagKey.of(RegistryKeys.BLOCK, id("allow_use_while_slumbering"));
 
 	public static final EyeItem EYE_ITEM = registerItem("eye", EyeItem::new,
 			new Item.Settings()
@@ -72,11 +77,17 @@ public class EyeOfDreams implements ModInitializer {
 		});
 		AttackBlockCallback.EVENT.register(EyeOfDreams::cancelActionIfSlumbering);
 		AttackEntityCallback.EVENT.register(EyeOfDreams::cancelActionIfSlumbering);
-		UseBlockCallback.EVENT.register(EyeOfDreams::cancelActionIfSlumbering);
+		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+			BlockState state = world.getBlockState(hitResult.getBlockPos());
+			if (state.isIn(ALLOW_USE_WHILE_SLUMBERING_BLOCK)) {
+				return ActionResult.PASS;
+			}
+			return EyeOfDreams.cancelActionIfSlumbering(player);
+		});
 		UseEntityCallback.EVENT.register(EyeOfDreams::cancelActionIfSlumbering);
 		UseItemCallback.EVENT.register((player, world, hand) -> {
 			ItemStack stack = player.getStackInHand(hand);
-			if (stack.isIn(ALLOW_USE_WHILE_SLUMBERING)) {
+			if (stack.isIn(ALLOW_USE_WHILE_SLUMBERING_ITEM)) {
 				return ActionResult.PASS;
 			}
 			return EyeOfDreams.cancelActionIfSlumbering(player);
@@ -103,6 +114,9 @@ public class EyeOfDreams implements ModInitializer {
 			return original;
 		}
 		if (me == null || other == null) {
+			return original;
+		}
+		if (other.getType().isIn(ALWAYS_VISIBLE)) {
 			return original;
 		}
 		if (!me.isAlive() || !other.isAlive()) {
