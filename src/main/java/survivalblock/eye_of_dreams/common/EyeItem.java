@@ -55,6 +55,9 @@ public class EyeItem extends Item {
     public static MutableText scrollingGradient(Text original, int wrap, float reciprocalWrap, int startColor, int endColor, boolean forward) {
         String blessed = original.getString();
         int length = blessed.length();
+        if (length <= 0) {
+            return original instanceof MutableText mutableText ? mutableText : original.copy();
+        }
         long time = Util.getMeasuringTimeMs();
         MutableText text = Text.literal(blessed.substring(0, 1)).withColor(ColorHelper.lerp(((time) % wrap) * reciprocalWrap, startColor, endColor));
         float incr = (float) wrap / length;
