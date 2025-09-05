@@ -1,2 +1,2 @@
-Eye of Dreams 1.0.5+1.21.8
-- Nerf phantoms, but reduce their hitbox
+Eye of Dreams 1.0.6+1.21.8
+- realm.ogg is now mono
